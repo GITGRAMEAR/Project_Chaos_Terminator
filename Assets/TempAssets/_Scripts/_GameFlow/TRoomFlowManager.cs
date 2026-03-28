@@ -8,15 +8,6 @@ using System;
 /// </summary>
 public class TRoomFlowManager : MonoBehaviour
 {
-    /// <summary>
-    /// 房间正式开始时触发（UI、音效、状态同步可监听）
-    /// </summary>
-    public event Action OnRoomStarted;
-
-    /// <summary>
-    /// 房间结束时触发（结算、跳转、数据保存可监听）
-    /// </summary>
-    public event Action OnRoomFinished;
 
     /// <summary>
     /// 房间工厂：负责创建不同类型的房间实例
@@ -34,9 +25,43 @@ public class TRoomFlowManager : MonoBehaviour
     /// </summary>
     public void StartRun()
     {
+        //清空所有之前的事件订阅
+        EventBus.ClearAll();
+        
         // TODO: 未来扩展：初始化运行时状态、生成第一批候选房间、重置秩序/混沌等
         GoToNextRoomPreview();
     }
+
+    private void SubscribeRoomEvents()
+    {
+        //监听房间事件开始和结束
+        EventBus.Subscribe<RoomStartedEvent>(OnRoomStarted);
+        EventBus.Subscribe<RoomFinishedEvent>(OnRoomFinished);
+    }
+    private void OnRoomStarted(RoomStartedEvent evt)
+    {
+        // 这里可以做一些房间开始的全局逻辑
+        Debug.Log($"[FlowMgr] 房间 {evt.Definition.roomId} 已开始");
+    }
+    
+    private void OnRoomFinished(RoomFinishedEvent evt)
+    {
+        Debug.Log($"[FlowMgr] 房间 {evt.Definition.roomId} 结束，胜利: {evt.Won}");
+        
+        // 可以在这里触发下一个房间的生成
+        if (evt.Won)
+        {
+            // 胜利后的逻辑
+            ClearNegatives();
+            AwardPlayer(evt.Definition);
+        }
+        else
+        {
+            // 失败后的逻辑
+            ShowFailOptions();
+        }
+    }    
+        
 
     /// <summary>
     /// 进入下一个房间预览阶段
@@ -54,13 +79,10 @@ public class TRoomFlowManager : MonoBehaviour
     /// <param name="def">房间配置数据</param>
     public void EnterRoom(RoomDefinition def)
     {
-        // 通知：房间开始
-        OnRoomStarted?.Invoke();
-
         // 工厂创建房间实例
         currentRoom = roomFactory.Create(def);
 
-        // 启动房间逻辑
+        // 启动房间逻辑(启动时发布事件)
         currentRoom.Begin();
     }
 
@@ -70,8 +92,13 @@ public class TRoomFlowManager : MonoBehaviour
     /// <param name="won">true=胜利，false=失败</param>
     public void FinishRoom(bool won)
     {
-        // 通知：房间结束
-        OnRoomFinished?.Invoke();
+       EventBus.Publish(new RoomFinishedEvent(currentRoom, currentRoom.def,won));
+       //销毁房间
+       if (currentRoom != null)
+       {
+           currentRoom.Destroy();
+           currentRoom = null;
+       }
 
         // TODO: 胜负结算：技能升级/遗物获取/失败选项
         // TODO: 秩序/混沌数值更新
@@ -79,35 +106,32 @@ public class TRoomFlowManager : MonoBehaviour
         // TODO: 胜利时清理负面效果 ClearNegatives()
         // TODO: 失败时打开“放弃/奋力一搏”选择界面
     }
-}
-
-// ------------------------------------------------------------------------------
-
-/// <summary>
-/// 运行时房间实例
-/// 作用：统一封装所有房间类型（战斗房、遗物房、特殊联动房等）
-/// 遵循统一接口，方便流程管理
-/// </summary>
-public class RoomInstance
-{
-    /// <summary>
-    /// 房间配置（类型、奖励、规则等）
-    /// </summary>
-    private readonly RoomDefinition def;
 
     /// <summary>
-    /// 构造：传入房间配置
+    /// 清除所有负面效果
+    /// 在房间胜利后调用，用于移除玩家身上的所有负面状态
     /// </summary>
-    public RoomInstance(RoomDefinition def)
+    public void ClearNegatives()
     {
-        this.def = def;
+        //清楚负面效果
+        //TODO:后期肯会实现多种类型
     }
 
-    /// <summary>
-    /// 启动房间逻辑（根据房间类型执行不同内容）
-    /// </summary>
-    public void Begin()
+    private void AwardPlayer(RoomDefinition def)
     {
-        // TODO: 根据 def.roomType 启动对应逻辑（战斗/事件/商店/奖励等）
+        //TODO:奖励目前没在so里面配置
+        
+    }
+
+    private void ShowFailOptions()
+    {
+        //TODO:失败
+    }
+    
+    //销毁时推定
+    private void OnDestroy()
+    {
+        EventBus.Unsubscribe<RoomStartedEvent>(OnRoomStarted);
+        EventBus.Unsubscribe<RoomFinishedEvent>(OnRoomFinished);
     }
 }
