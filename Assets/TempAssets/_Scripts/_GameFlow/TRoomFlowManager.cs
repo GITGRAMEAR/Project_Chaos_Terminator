@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// 房间流程管理器（核心状态机骨架）
@@ -8,11 +9,33 @@ using System;
 /// </summary>
 public class TRoomFlowManager : MonoBehaviour
 {
-
+    public static TRoomFlowManager Instance;
     /// <summary>
     /// 房间工厂：负责创建不同类型的房间实例
     /// </summary>
     [SerializeField] private RoomFactory roomFactory;
+    
+    public RoomFactory GetRoomFactory() => roomFactory;
+    
+    void Awake()
+    {
+        // 单例保证全局唯一
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            // 已存在 → 销毁自己，防止重复
+            Destroy(gameObject);
+        }
+    }
+    
+    /// <summary>
+    /// 候选房间
+    /// </summary>
+    private List<RoomDefinition> currentCandidates;
 
     /// <summary>
     /// 当前正在进行的房间实例
@@ -27,7 +50,7 @@ public class TRoomFlowManager : MonoBehaviour
     {
         //清空所有之前的事件订阅
         EventBus.ClearAll();
-        
+        SubscribeRoomEvents();
         // TODO: 未来扩展：初始化运行时状态、生成第一批候选房间、重置秩序/混沌等
         GoToNextRoomPreview();
     }
@@ -60,21 +83,30 @@ public class TRoomFlowManager : MonoBehaviour
             // 失败后的逻辑
             ShowFailOptions();
         }
-    }    
-        
-
+    }
+    
     /// <summary>
     /// 进入下一个房间预览阶段
     /// MVP版本：简化为直接生成下一个房间
     /// </summary>
     private void GoToNextRoomPreview()
     {
+        Debug.Log("房间预览");
         // MVP：简化为直接生成下一个房 + 让 UI 调用“选择进/退”
         // TODO: 未来实现“消耗秩序值预览两个房间类型中的一个”
+        Debug.Log("<color=yellow>=== 生成 2 个房间预览 ===</color>");
+
+        // 1. 生成2个随机房间（从普通战斗房随机拿）
+        currentCandidates = new List<RoomDefinition>();
+        currentCandidates.Add(roomFactory.CreateRandomCandidate(RoomType.NormalBattle));
+        currentCandidates.Add(roomFactory.CreateRandomCandidate(RoomType.NormalBattle));
+
+        // 2. 把这2个房间发给UI，让玩家选择
+        EventBus.Publish(new RoomPreviewGeneratedEvent(currentCandidates));
     }
 
     /// <summary>
-    /// 进入指定房间（开始房间流程）
+    /// 直接进入指定房间（开始房间流程）
     /// </summary>
     /// <param name="def">房间配置数据</param>
     public void EnterRoom(RoomDefinition def)
@@ -128,9 +160,10 @@ public class TRoomFlowManager : MonoBehaviour
         //TODO:失败
     }
     
-    //销毁时推定
+    //销毁时退订
     private void OnDestroy()
     {
+        
         EventBus.Unsubscribe<RoomStartedEvent>(OnRoomStarted);
         EventBus.Unsubscribe<RoomFinishedEvent>(OnRoomFinished);
     }

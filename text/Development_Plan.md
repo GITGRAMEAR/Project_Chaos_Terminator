@@ -74,22 +74,22 @@
 
 ---
 
-## 每日计划（可执行版，含文件/Prefab/UI/验收）
+## 每日计划
 
 > 说明：如果你还没建场景/Prefab，按表格里“Prefab/UI”列创建占位（空物体+脚本也算）。
 
 ### 第1周（闭环原型）
 
 
-| 天   | 今日目标（最小可验收）                    | 需要改/新增的文件（建议）                                                                  | Prefab / UI（建议）                                           | 今日验收标准                                                                 |
-| --- | ------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------------------------------------------- |
-| D1  | 场景里把“流程三件套”跑起来（预览事件能触发）        | `TRoomFlowManager.cs` `TRoomSelectionController.cs` `RoomFactory.cs`           | `MVP.unity`：`GameFlow`物体挂3脚本；做一个临时按钮触发 `RequestPreview()` | 点击按钮后 `OnPreviewGenerated` 能触发（日志或UI显示两张房间卡）                           |
-| D2  | 选择房间 → 进入房间（先用日志占位）            | `TRoomSelectionController.cs`（在 `ChooseEnter` 调用 `TRoomFlowManager.EnterRoom`） | UI：两张卡 + Enter按钮（占位）                                      | 选中某卡并点击进入后，`TRoomFlowManager.EnterRoom` 被调用且 `RoomInstance.Begin()` 执行 |
-| D3  | 3类房间“进入即表现”占位（普通/特殊/遗物）        | `TRoomFlowManager.cs`（GoToNextRoomPreview 先实现简单流转） `TRoomDefinition.cs`        | UI：房间标题/类型文本                                              | 进入不同 `RoomType` 时，UI能看到类型变化；遗物房进入后弹出“三选一占位”                            |
-| D4  | 战斗最小集：玩家移动 + 1种敌人追击 + 击杀（触发胜利） | `TPlayerController2D.cs` `EnemyAI.cs`（锁定玩家target）                              | Prefab：`Player`、`Enemy`（CircleCollider2D等）                | 房间中能刷出敌人并追玩家；击杀条件满足时能触发“房间胜利”事件/调用 `FinishRoom(true)`                  |
-| D5  | 经验/升级 3选1（只改一个数值即可）            | （新增）`ExpSystem.cs`（或放 `GameFlow/Combat`）                                       | UI：升级面板（三按钮）                                              | 经验满弹出三选一，选一个后玩家某个数值变化（如伤害+10%）并关闭面板                                    |
-| D6  | 存档最小集（写入/读取跑通）                 | `SaveDataModels.cs` `SaveSystem.cs`（接入 runId/roomCount/order/chaos）            | UI：存档按钮（占位）                                               | 点击保存后本地 JSON 生成；重启运行可读取到 roomCount/order/chaos                         |
-| D7  | 冒烟测试 + 小重构（把“临时硬编码”集中）         | 视情况整理：`RoomFactory.cs`、`TRoomFlowManager.cs`                                   | 无                                                         | 连跑 ≥5房稳定；关键数据只在一个地方生成（不散落硬编码）                                          |
+| 天   | 今日目标（最小可验收）                    | 需要改/新增的文件                                                                      | Prefab / UI                                               | 今日验收标准                                                                    |
+| --- | ------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| D1  | 场景里把“流程三件套”跑起来（预览事件能触发）        | `TRoomFlowManager.cs` `TRoomSelectionController.cs` `RoomFactory.cs`           | `MVP.unity`：`GameFlow`物体挂3脚本；做一个临时按钮触发 `RequestPreview()` | 点击按钮后 `OnPreviewGenerated` 能触发（日志或UI显示两张房间卡）完成                            |
+| D2  | 选择房间 → 进入房间（先用日志占位）            | `TRoomSelectionController.cs`（在 `ChooseEnter` 调用 `TRoomFlowManager.EnterRoom`） | UI：两张卡 + Enter按钮（占位）                                      | 选中某卡并点击进入后，`TRoomFlowManager.EnterRoom` 被调用且 `RoomInstance.Begin()` 执行 完成 |
+| D3  | 3类房间“进入即表现”占位（普通/特殊/遗物）        | `TRoomFlowManager.cs`（GoToNextRoomPreview 先实现简单流转） `TRoomDefinition.cs`        | UI：房间标题/类型文本                                              | 进入不同 `RoomType` 时，UI能看到类型变化；遗物房进入后弹出“三选一占位”                               |
+| D4  | 战斗最小集：玩家移动 + 1种敌人追击 + 击杀（触发胜利） | `TPlayerController2D.cs` `EnemyAI.cs`（锁定玩家target）                              | Prefab：`Player`、`Enemy`（CircleCollider2D等）                | 房间中能刷出敌人并追玩家；击杀条件满足时能触发“房间胜利”事件/调用 `FinishRoom(true)`                     |
+| D5  | 经验/升级 3选1（只改一个数值即可）            | （新增）`ExpSystem.cs`（或放 `GameFlow/Combat`）                                       | UI：升级面板（三按钮）                                              | 经验满弹出三选一，选一个后玩家某个数值变化（如伤害+10%）并关闭面板                                       |
+| D6  | 存档最小集（写入/读取跑通）                 | `SaveDataModels.cs` `SaveSystem.cs`（接入 runId/roomCount/order/chaos）            | UI：存档按钮（占位）                                               | 点击保存后本地 JSON 生成；重启运行可读取到 roomCount/order/chaos                            |
+| D7  | 冒烟测试 + 小重构（把“临时硬编码”集中）         | 视情况整理：`RoomFactory.cs`、`TRoomFlowManager.cs`                                   | 无                                                         | 连跑 ≥5房稳定；关键数据只在一个地方生成（不散落硬编码）                                             |
 
 
 ### 第2周（秩序/混沌 + 联动 + 失败选项）
@@ -103,7 +103,7 @@
 | D11 | 失败弹窗：放弃/奋力一搏入口跑通           | `FailChoiceController.cs` `TRoomFlowManager.cs`                   | UI：失败弹窗（2按钮）               | 房间失败时弹窗出现；点放弃结束本局流程；点奋力一搏继续流程                          |
 | D12 | 混沌附着：奋力一搏后永久负面挂载           | `TOrderChaosState.cs` `TOrderChaosRules.cs` `TRoomFlowManager.cs` | UI：负面列表（文本占位）              | 选择奋力一搏后 chaosValue 增加，attachedNegatives 增加一条并在后续房间仍存在  |
 | D13 | 胜利清除全部负面 + 后续减弱+奖励（先做数值乘子） | `TOrderChaosRules.cs` `TOrderChaosState.cs`                       | UI：清除提示/奖励提示               | 任意房间胜利后 attachedNegatives 清空；随后新增负面强度变弱，同时给正向加成（如伤害乘子） |
-| D14 | 单元测试覆盖规则纯函数（关键用例）          | （新增）`Assets/TempAssets/Tests/`* 或 `Assets/Tests/*`                | 无                          | 秩序收益、混沌叠加、衰减函数、联动解析关键用例通过                              |
+| D14 | 单元测试覆盖规则纯函数（关键用例）          | （新增）`Assets/TempAssets/Tests/`* 或 `Assets/Tests/`*                | 无                          | 秩序收益、混沌叠加、衰减函数、联动解析关键用例通过                              |
 
 
 ### 第3周（爽感与内容最小集）

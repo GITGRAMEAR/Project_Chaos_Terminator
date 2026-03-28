@@ -7,12 +7,13 @@ using UnityEngine.UI;
 /// </summary>
 public class TestRoomSelectUI : MonoBehaviour
 {
-    [SerializeField] private TRoomFlowManager flowManager;
+   
     [Header("按钮")]
     public Button btnGeneratePreview; // 生成预览
     public Button btnChooseRoom1;     // 选房间1
     public Button btnChooseRoom2;     // 选房间2
     public Button btnReRoll;          // 重掷
+    public Button btnFinishRoom;      //关闭房间
 
     private List<RoomDefinition> currentCandidates;
 
@@ -30,7 +31,7 @@ public class TestRoomSelectUI : MonoBehaviour
     void TestFinishRoom()
     {
         Debug.Log("<color=green>=== 测试：房间胜利 ===</color>");
-        flowManager.FinishRoom(true);
+        TRoomFlowManager.Instance.FinishRoom(true);
     }
     private void Start()
     {
@@ -39,11 +40,13 @@ public class TestRoomSelectUI : MonoBehaviour
         btnChooseRoom1.onClick.AddListener(() => ChooseRoom(0));
         btnChooseRoom2.onClick.AddListener(() => ChooseRoom(1));
         btnReRoll.onClick.AddListener(OnClickReRoll);
+        btnFinishRoom.onClick.AddListener(TestFinishRoom);
     }
 
     // 点击生成预览
     private void OnClickGenerate()
     {
+        
         Debug.Log("[UI] 请求生成房间预览");
         EventBus.Publish(new RequestRoomPreviewEvent(10));
     }

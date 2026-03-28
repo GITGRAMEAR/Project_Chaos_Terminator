@@ -1,4 +1,7 @@
-﻿/// <summary>
+﻿using System;
+using System.Collections.Generic;
+
+/// <summary>
 /// 房间相关事件定义
 /// 遵循：事件名 + Event 后缀
 /// </summary>
@@ -49,5 +52,53 @@ public struct RoomDestroyedEvent
     {
         RoomId = id;
         RoomInstance = room;
+    }
+}
+
+public struct RoomPreviewGeneratedEvent
+{
+    public List<RoomDefinition> candidates;
+
+    public RoomPreviewGeneratedEvent(List<RoomDefinition> candidates)
+    {
+        this.candidates = candidates;
+    }
+}
+
+/// <summary>
+/// 外部请求生成房间预览
+/// </summary>
+public struct RequestRoomPreviewEvent
+{
+    public float orderValue; // 秩序值（未来可用）
+    public RequestRoomPreviewEvent(float orderValue) => this.orderValue = orderValue;
+}
+
+/// <summary>
+/// 玩家选择了某个房间
+/// </summary>
+public struct PlayerChooseRoomEvent
+{
+    public RoomDefinition selectedRoomDef;
+    public Action onComplete; // 选择完成后的回调
+
+    public PlayerChooseRoomEvent(RoomDefinition selectedRoomDef, Action onComplete)
+    {
+        this.selectedRoomDef = selectedRoomDef;
+        this.onComplete = onComplete;
+    }
+}
+
+
+/// <summary>
+/// 玩家请求重掷房间
+/// </summary>
+public struct PlayerReRollRoomEvent
+{
+    public Action onComplete;
+
+    public PlayerReRollRoomEvent(Action onComplete)
+    {
+        this.onComplete = onComplete;
     }
 }

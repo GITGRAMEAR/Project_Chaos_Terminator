@@ -1,60 +1,95 @@
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 房间选择控制器
-/// 功能：负责房间预览、房间选择、重掷房间流程
-/// 属于 UI 与 流程管理层之间的中间层
+/// 功能：生成房间预览、处理玩家选择、处理重掷逻辑
 /// </summary>
 public class TRoomSelectionController : MonoBehaviour
 {
-    /// <summary>
-    /// 当房间预览生成完毕时抛出事件
-    /// 外部（UI）监听后显示两个房间选项
-    /// </summary>
-    public event Action<RoomDefinition, RoomDefinition> OnPreviewGenerated;
-
-    /// <summary>
-    /// 房间工厂：用于生成随机房间候选
-    /// </summary>
+    [Header("房间工厂")]
+    [Tooltip("用于生成随机房间配置")]
     [SerializeField] private RoomFactory roomFactory;
 
-    /// <summary>
-    /// 请求生成房间预览（消耗秩序值进行预览）
-    /// </summary>
-    /// <param name="orderValue">当前秩序值（未来用于判断是否可预览/消耗）</param>
-    public void RequestPreview(float orderValue)
+    #region 事件订阅（必须写）
+    private void OnEnable()
     {
-        // MVP 演示逻辑：固定生成 普通战斗房 + 特殊联动房
-        // TODO: 未来实现逻辑：
-        // 1. 消耗秩序值
-        // 2. 根据规则随机房间类型（普通/特殊/遗物）
-        // 3. 生成两个不同房间供选择
-        var a = roomFactory.CreateRandomCandidate(RoomType.NormalBattle);
-        var b = roomFactory.CreateRandomCandidate(RoomType.SpecialLinkage);
+        // 订阅：外部请求生成房间预览
+        EventBus.Subscribe<RequestRoomPreviewEvent>(OnRequestPreviewGenerated);
 
-        // 通知外部：房间预览已生成
-        OnPreviewGenerated?.Invoke(a, b);
+        // 订阅：玩家选择房间并进入
+        EventBus.Subscribe<PlayerChooseRoomEvent>(OnPlayerChooseRoom);
+
+        // 订阅：玩家重掷房间
+        EventBus.Subscribe<PlayerReRollRoomEvent>(OnPlayerReRollRoom);
     }
 
-    /// <summary>
-    /// 玩家选择进入某个房间
-    /// </summary>
-    /// <param name="chosen">玩家选中的房间配置</param>
-    /// <param name="onDone">选择完成后的回调（关闭UI、跳转等）</param>
-    public void ChooseEnter(RoomDefinition chosen, Action onDone)
+    private void OnDisable()
     {
-        // TODO: 这里真正调用 RoomFlowManager.EnterRoom 进入房间
-        onDone?.Invoke();
+        // 取消订阅（防止内存泄漏）
+        EventBus.Unsubscribe<RequestRoomPreviewEvent>(OnRequestPreviewGenerated);
+        EventBus.Unsubscribe<PlayerChooseRoomEvent>(OnPlayerChooseRoom);
+        EventBus.Unsubscribe<PlayerReRollRoomEvent>(OnPlayerReRollRoom);
     }
+    #endregion
 
+    #region 生成房间预览
     /// <summary>
-    /// 玩家选择重掷（重新生成房间）
+    /// 收到生成预览请求 → 生成房间列表 → 发给UI
     /// </summary>
-    /// <param name="onDone">重掷完成回调</param>
-    public void ChooseReRoll(Action onDone)
+    private void OnRequestPreviewGenerated(RequestRoomPreviewEvent evt)
     {
-        // 可扩展：消耗秩序/道具重掷
-        onDone?.Invoke();
+        Debug.Log($"[房间选择器] 收到预览请求，当前秩序值：{evt.orderValue}");
+
+        // ==============================
+        // 核心：生成 2 个房间（可扩展N个）
+        // ==============================
+        List<RoomDefinition> candidates = new List<RoomDefinition>();
+        candidates.Add(roomFactory.CreateRandomCandidate(RoomType.NormalBattle));
+        candidates.Add(roomFactory.CreateRandomCandidate(RoomType.SpecialLinkage));
+        // ==============================
+        // 发布事件 → UI 显示房间选项
+        // ==============================
+        EventBus.Publish(new RoomPreviewGeneratedEvent(candidates));
     }
+    #endregion
+
+    #region 玩家选择房间
+    /// <summary>
+    /// 玩家选中房间 → 通知流程管理器进入房间
+    /// </summary>
+    private void OnPlayerChooseRoom(PlayerChooseRoomEvent evt)
+    {
+        if (evt.selectedRoomDef == null)
+        {
+            Debug.LogError("[房间选择器] 选中的房间配置为空！");
+            return;
+        }
+
+        Debug.Log($"[房间选择器] 玩家选择房间：{evt.selectedRoomDef.roomId}");
+
+        // 通知房间流程管理器 → 正式进入房间
+        TRoomFlowManager.Instance.EnterRoom(evt.selectedRoomDef);
+
+        // 执行回调：关闭UI、播放动画等
+        evt.onComplete?.Invoke();
+    }
+    #endregion
+
+    #region 玩家重掷房间
+    /// <summary>
+    /// 玩家重掷房间（可扩展消耗逻辑）
+    /// </summary>
+    private void OnPlayerReRollRoom(PlayerReRollRoomEvent evt)
+    {
+        Debug.Log("[房间选择器] 玩家执行重掷房间");
+
+        // TODO：这里加消耗秩序值/道具逻辑
+
+        // 重掷完成后回调
+        evt.onComplete?.Invoke();
+
+        // 重掷后重新生成一波房间
+        OnRequestPreviewGenerated(new RequestRoomPreviewEvent(10));
+    }
+    #endregion
 }
